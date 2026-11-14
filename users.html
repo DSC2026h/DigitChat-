@@ -1,0 +1,440 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Digitchat - Find Users</title>
+
+<style>
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background: #efeae2;
+    color: #222;
+}
+
+header {
+    background: #075e54;
+    color: white;
+    padding: 17px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+header a {
+    color: white;
+    text-decoration: none;
+    font-size: 24px;
+}
+
+header h2 {
+    font-size: 20px;
+}
+
+.container {
+    max-width: 650px;
+    margin: auto;
+    padding: 18px;
+}
+
+.intro {
+    margin-bottom: 18px;
+}
+
+.intro h2 {
+    color: #075e54;
+    margin-bottom: 7px;
+}
+
+.intro p {
+    color: #667781;
+    font-size: 14px;
+}
+
+#search {
+    width: 100%;
+    padding: 14px 16px;
+    border: none;
+    border-radius: 25px;
+    outline: none;
+    font-size: 15px;
+    margin-bottom: 18px;
+    background: white;
+}
+
+#status {
+    text-align: center;
+    color: #667781;
+    padding: 15px;
+    font-size: 14px;
+}
+
+.user {
+    background: white;
+    padding: 13px;
+    margin-bottom: 10px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 1px 2px #00000010;
+}
+
+.avatar {
+    width: 48px;
+    height: 48px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: #d9fdd3;
+    color: #075e54;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 19px;
+    font-weight: bold;
+}
+
+.user-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.user h3 {
+    color: #222;
+    font-size: 16px;
+    margin-bottom: 5px;
+}
+
+.user p {
+    color: #667781;
+    font-size: 13px;
+    overflow-wrap: anywhere;
+}
+
+.presence {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 5px;
+    color: #667781;
+    font-size: 12px;
+}
+
+.online-dot {
+    width: 8px;
+    height: 8px;
+    background: #25d366;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.online-text {
+    color: #128c7e;
+    font-weight: bold;
+}
+
+.chat-button {
+    background: #075e54;
+    color: white;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 22px;
+    font-size: 13px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.chat-button:active {
+    opacity: 0.8;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <a href="dashboard.html">←</a>
+    <h2>Find Users</h2>
+</header>
+
+<div class="container">
+
+    <div class="intro">
+        <h2>Discover People</h2>
+        <p>Find and connect with other Digitchat users.</p>
+    </div>
+
+    <input
+        type="search"
+        id="search"
+        placeholder="Search by name or username..."
+        autocomplete="off"
+    >
+
+    <div id="status">Loading users...</div>
+    <div id="userList"></div>
+
+</div>
+
+<script type="module">
+
+import { auth, db, rtdb } from "./script.js";
+
+import {
+    onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
+
+import {
+    collection,
+    getDocs
+} from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
+
+import {
+    ref,
+    onValue
+} from "https://www.gstatic.com/firebasejs/11.0.0/firebase-database.js";
+
+
+const search = document.getElementById("search");
+const userList = document.getElementById("userList");
+const status = document.getElementById("status");
+
+let users = [];
+let currentUser = null;
+
+const presenceData = {};
+const presenceListeners = {};
+
+
+// FORMAT LAST SEEN TIME
+
+function formatLastSeen(timestamp) {
+
+    if (!timestamp || typeof timestamp !== "number") {
+        return "Last seen unavailable";
+    }
+
+    const date = new Date(timestamp);
+
+    if (isNaN(date.getTime())) {
+        return "Last seen unavailable";
+    }
+
+    const now = new Date();
+
+    const time = date.toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit"
+    });
+
+    if (date.toDateString() === now.toDateString()) {
+        return "Last seen today at " + time;
+    }
+
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    if (date.toDateString() === yesterday.toDateString()) {
+        return "Last seen yesterday at " + time;
+    }
+
+    return "Last seen " + date.toLocaleDateString() + " at " + time;
+}
+
+
+// LISTEN TO EACH USER'S PRESENCE
+
+function listenToPresence() {
+
+    users.forEach(user => {
+
+        if (!user.uid || presenceListeners[user.uid]) {
+            return;
+        }
+
+        const statusRef = ref(
+            rtdb,
+            "status/" + user.uid
+        );
+
+        presenceListeners[user.uid] = onValue(
+            statusRef,
+            snapshot => {
+
+                presenceData[user.uid] = snapshot.val() || {
+                    state: "offline"
+                };
+
+                displayUsers();
+
+            },
+            error => {
+                console.error("Presence loading error:", error);
+            }
+        );
+
+    });
+
+}
+
+
+// DISPLAY USERS
+
+function displayUsers() {
+
+    const searchText = search.value.toLowerCase().trim();
+
+    userList.innerHTML = "";
+
+    const filtered = users.filter(user => {
+
+        const fullName = (user.fullName || "").toLowerCase();
+        const username = (user.username || "").toLowerCase();
+
+        return fullName.includes(searchText) ||
+               username.includes(searchText);
+
+    });
+
+    if (filtered.length === 0) {
+        status.textContent = "No users found.";
+        return;
+    }
+
+    status.textContent = filtered.length + " users found.";
+
+    filtered.forEach(user => {
+
+        const card = document.createElement("div");
+        card.className = "user";
+
+        const avatar = document.createElement("div");
+        avatar.className = "avatar";
+
+        const nameText = user.fullName || user.username || "User";
+
+        avatar.textContent = nameText.charAt(0).toUpperCase();
+
+        const info = document.createElement("div");
+        info.className = "user-info";
+
+        const name = document.createElement("h3");
+        name.textContent = nameText;
+
+        const username = document.createElement("p");
+        username.textContent = "@" + (user.username || "user");
+
+        const presence = document.createElement("div");
+        presence.className = "presence";
+
+        const userStatus = presenceData[user.uid];
+
+        if (userStatus && userStatus.state === "online") {
+
+            const dot = document.createElement("span");
+            dot.className = "online-dot";
+
+            const onlineText = document.createElement("span");
+            onlineText.className = "online-text";
+            onlineText.textContent = "Online";
+
+            presence.appendChild(dot);
+            presence.appendChild(onlineText);
+
+        } else {
+
+            presence.textContent = formatLastSeen(
+                userStatus ? userStatus.last_changed : null
+            );
+
+        }
+
+        const button = document.createElement("button");
+        button.className = "chat-button";
+        button.textContent = "Message";
+
+        button.addEventListener("click", () => {
+
+            sessionStorage.setItem(
+                "digitchatContact",
+                user.uid
+            );
+
+            window.location.href = "chat.html";
+
+        });
+
+        info.appendChild(name);
+        info.appendChild(username);
+        info.appendChild(presence);
+
+        card.appendChild(avatar);
+        card.appendChild(info);
+        card.appendChild(button);
+
+        userList.appendChild(card);
+
+    });
+
+}
+
+
+// LOAD AUTHENTICATED USERS
+
+onAuthStateChanged(auth, async user => {
+
+    if (!user) {
+        window.location.href = "index.html";
+        return;
+    }
+
+    currentUser = user;
+
+    status.textContent = "Loading users...";
+
+    try {
+
+        const snapshot = await getDocs(
+            collection(db, "users")
+        );
+
+        users = snapshot.docs
+            .map(document => document.data())
+            .filter(profile =>
+                profile.uid &&
+                profile.uid !== currentUser.uid
+            );
+
+        listenToPresence();
+        displayUsers();
+
+    } catch (error) {
+
+        console.error(error);
+
+        status.textContent =
+            "Could not load users. Please try again.";
+
+    }
+
+});
+
+
+// SEARCH USERS
+
+search.addEventListener("input", displayUsers);
+
+</script>
+
+<script type="module" src="presence.js"></script>
+
+</body>
+</html>
