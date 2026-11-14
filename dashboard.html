@@ -1,0 +1,811 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Digitchat</title>
+<link rel="stylesheet" href="style.css">
+
+<style>
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background: #fff;
+    font-family: Arial, sans-serif;
+    color: #111b21;
+}
+
+.app {
+    max-width: 650px;
+    height: 100dvh;
+    margin: auto;
+    display: flex;
+    flex-direction: column;
+    background: white;
+    overflow: hidden;
+}
+
+/* HEADER */
+
+.header {
+    background: #075e54;
+    color: white;
+    padding: 15px;
+}
+
+.header-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.logo {
+    font-size: 23px;
+    font-weight: bold;
+}
+
+.header-icons {
+    display: flex;
+    align-items: center;
+    gap: 22px;
+}
+
+.header-icons button {
+    background: transparent;
+    border: none;
+    color: white;
+    font-size: 22px;
+    padding: 3px;
+    margin: 0;
+}
+
+.tabs {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 22px;
+}
+
+.tabs button {
+    background: transparent;
+    border: none;
+    color: #d5e8e4;
+    font-size: 13px;
+    padding: 8px 5px;
+    margin: 0;
+    border-bottom: 3px solid transparent;
+    border-radius: 0;
+}
+
+.tabs button.active {
+    color: white;
+    border-bottom-color: white;
+    font-weight: bold;
+}
+
+/* SEARCH */
+
+.search-area {
+    padding: 10px 15px;
+    background: white;
+}
+
+.search-area input {
+    width: 100%;
+    padding: 12px 18px;
+    background: #f0f2f5;
+    border: none;
+    border-radius: 25px;
+    outline: none;
+    font-size: 14px;
+}
+
+/* CONTENT */
+
+.content {
+    flex: 1;
+    overflow-y: auto;
+    background: white;
+}
+
+.section-title {
+    padding: 14px 16px;
+    color: #667781;
+    font-size: 13px;
+    font-weight: bold;
+}
+
+.chat-item {
+    display: flex;
+    align-items: center;
+    padding: 12px 15px;
+    gap: 13px;
+    cursor: pointer;
+    border-bottom: 1px solid #f0f2f5;
+}
+
+.chat-item:active {
+    background: #f0f2f5;
+}
+
+.avatar {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: #d9fdd3;
+    color: #075e54;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 19px;
+    flex-shrink: 0;
+}
+
+.chat-details {
+    flex: 1;
+    min-width: 0;
+}
+
+.chat-top {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.chat-top strong {
+    font-size: 16px;
+    font-weight: 500;
+}
+
+.chat-time {
+    color: #667781;
+    font-size: 11px;
+}
+
+.chat-bottom {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 6px;
+    gap: 8px;
+}
+
+.last-message {
+    color: #667781;
+    font-size: 13px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.unread {
+    background: #25d366;
+    color: white;
+    font-size: 11px;
+    min-width: 19px;
+    height: 19px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px;
+}
+
+/* ARCHIVED */
+
+.archive {
+    padding: 15px 18px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    border-bottom: 1px solid #f0f2f5;
+    color: #54656f;
+    font-size: 14px;
+}
+
+/* BOTTOM NAVIGATION */
+
+.bottom-nav {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    padding: 10px 4px;
+    border-top: 1px solid #eee;
+    background: white;
+}
+
+.bottom-nav button {
+    border: none;
+    background: transparent;
+    color: #667781;
+    font-size: 11px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    padding: 5px;
+    margin: 0;
+}
+
+.bottom-nav button.active {
+    color: #075e54;
+    font-weight: bold;
+}
+
+.nav-icon {
+    font-size: 21px;
+}
+
+/* EMPTY STATES */
+
+.empty {
+    padding: 50px 20px;
+    text-align: center;
+    color: #667781;
+}
+
+.empty h3 {
+    margin-bottom: 10px;
+    color: #075e54;
+}
+
+/* LOGOUT */
+
+.logout {
+    background: transparent !important;
+    color: white !important;
+    border: none;
+    font-size: 13px;
+    margin: 0;
+    padding: 5px;
+}
+
+@media(min-width: 700px) {
+    body {
+        background: #d9e2e5;
+    }
+
+    .app {
+        box-shadow: 0 0 10px #00000020;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div class="app">
+
+    <!-- HEADER -->
+
+    <div class="header">
+
+        <div class="header-top">
+            <div class="logo">Digitchat</div>
+
+            <div class="header-icons">
+                <button type="button" aria-label="Camera">📷</button>
+                <button type="button" aria-label="More options"
+                    id="menuButton">⋮</button>
+                <button class="logout" id="logoutButton">
+                    Logout
+                </button>
+            </div>
+        </div>
+
+        <div class="tabs">
+            <button type="button" id="tabCamera">📷</button>
+            <button type="button" id="addContactButton"
+    aria-label="Add contact">＋</button>
+            <button type="button" class="active" data-tab="chats">
+                CHATS
+            </button>
+            <button type="button" data-tab="updates">
+                UPDATES
+            </button>
+            <button type="button" data-tab="communities">
+                COMMUNITIES
+            </button>
+            <button type="button" data-tab="calls">
+                CALLS
+            </button>
+        </div>
+
+    </div>
+
+    <!-- SEARCH -->
+
+    <div class="search-area" id="searchArea">
+        <input
+            type="search"
+            id="searchUsers"
+            placeholder="Search by name or username"
+        >
+    </div>
+
+    <!-- MAIN CONTENT -->
+
+    <div class="content" id="content">
+
+        <div class="archive">
+            <span>📦</span>
+            <strong>Archived</strong>
+        </div>
+
+        <div class="section-title">RECENT CHATS</div>
+
+        <div id="contactList">
+            <div class="empty">
+                Loading your contacts...
+            </div>
+        </div>
+
+    </div>
+
+    <!-- BOTTOM NAVIGATION -->
+
+    <div class="bottom-nav">
+
+        <button class="active" data-tab="chats">
+            <span class="nav-icon">💬</span>
+            Chats
+        </button>
+
+        <button data-tab="updates">
+            <span class="nav-icon">◉</span>
+            Updates
+        </button>
+
+        <button data-tab="communities">
+            <span class="nav-icon">👥</span>
+            Communities
+        </button>
+
+        <button data-tab="calls">
+            <span class="nav-icon">📞</span>
+            Calls
+        </button>
+
+    </div>
+
+</div>
+
+<script type="module">
+
+import { auth, db } from "./script.js";
+
+import {
+    onAuthStateChanged,
+    signOut
+} from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
+
+import {
+    collection,
+    getDocs
+} from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
+
+const contactList = document.getElementById("contactList");
+const searchUsers = document.getElementById("searchUsers");
+const content = document.getElementById("content");
+const searchArea = document.getElementById("searchArea");
+
+let contacts = [];
+
+onAuthStateChanged(auth, async (user) => {
+
+    if (!user) {
+        window.location.href = "index.html";
+        return;
+    }
+
+    loadContacts(user);
+});
+
+async function loadContacts(user) {
+
+    try {
+
+        const snapshot = await getDocs(collection(db, "users"));
+
+        contacts = snapshot.docs
+            .filter(item => item.id !== user.uid)
+            .map(item => ({
+                uid: item.id,
+                ...item.data()
+            }));
+
+        displayContacts(contacts);
+
+    } catch (error) {
+
+        console.error(error);
+
+        contactList.innerHTML = `
+            <div class="empty">
+                Unable to load contacts.
+            </div>
+        `;
+    }
+}
+
+function displayContacts(list) {
+
+    contactList.innerHTML = "";
+
+    if (list.length === 0) {
+
+        contactList.innerHTML = `
+            <div class="empty">
+                <h3>No conversations yet</h3>
+                <p>Registered Digitchat users will appear here.</p>
+            </div>
+        `;
+
+        return;
+    }
+
+    list.forEach(contact => {
+
+        const name = contact.fullName || contact.username || "User";
+
+        const item = document.createElement("div");
+
+        item.className = "chat-item";
+
+        item.innerHTML = `
+            <div class="avatar"></div>
+
+            <div class="chat-details">
+
+                <div class="chat-top">
+    <strong></strong>
+    <span class="chat-time">Digitchat</span>
+</div>
+
+<div class="contact-username"
+     style="color:#667781;font-size:12px;margin-top:4px;">
+</div>
+                <div class="chat-bottom">
+                    <span class="last-message">
+                        Tap to start a conversation
+                    </span>
+                </div>
+
+            </div>
+        `;
+
+        item.querySelector(".avatar").textContent =
+            name.charAt(0).toUpperCase();
+
+        item.querySelector("strong").textContent = name;
+item.querySelector(".contact-username").textContent =
+    contact.username ? "@" + contact.username : "";
+        item.addEventListener("click", () => {
+
+            sessionStorage.setItem(
+                "digitchatContact",
+                contact.uid
+            );
+
+            window.location.href = "chat.html";
+
+        });
+
+        contactList.appendChild(item);
+
+    });
+}
+
+/* SEARCH CONTACTS */
+
+searchUsers.addEventListener("input", () => {
+
+    const value = searchUsers.value.trim().toLowerCase();
+
+    const filtered = contacts.filter(contact => {
+
+        const name = (contact.fullName || "").toLowerCase();
+
+        const username = (contact.username || "").toLowerCase();
+
+        return name.includes(value) || username.includes(value);
+
+    });
+
+    displayContacts(filtered);
+
+});
+
+/* LOAD OTHER USERS' STATUS UPDATES */
+
+async function loadRecentStatuses() {
+
+    const statusList = document.getElementById("recentStatusList");
+
+    if (!statusList) return;
+
+    statusList.innerHTML = `
+        <div class="empty">Loading status updates...</div>
+    `;
+
+    try {
+
+        const snapshot = await getDocs(collection(db, "statuses"));
+
+        const latestStatuses = new Map();
+
+        snapshot.docs.forEach(doc => {
+
+            const status = doc.data();
+
+            if (
+                status.uid === auth.currentUser.uid ||
+                !status.expiresAt ||
+                status.expiresAt.toMillis() <= Date.now()
+            ) return;
+
+            const existing = latestStatuses.get(status.uid);
+
+            if (
+                !existing ||
+                status.createdAt.toMillis() > existing.createdAt.toMillis()
+            ) {
+                latestStatuses.set(status.uid, status);
+            }
+
+        });
+
+        statusList.innerHTML = "";
+
+        if (latestStatuses.size === 0) {
+
+            statusList.innerHTML = `
+                <div class="empty">
+                    <p>No new status updates yet.</p>
+                </div>
+            `;
+
+            return;
+        }
+
+        latestStatuses.forEach(status => {
+
+            const item = document.createElement("div");
+
+            item.className = "chat-item";
+            item.style.cursor = "pointer";
+
+            const avatar = document.createElement("div");
+            avatar.className = "avatar";
+            avatar.textContent =
+                (status.authorName || "U").charAt(0).toUpperCase();
+
+            const details = document.createElement("div");
+            details.className = "chat-details";
+
+            const name = document.createElement("strong");
+            name.textContent = status.authorName || "Digitchat User";
+
+            const message = document.createElement("div");
+            message.className = "last-message";
+            message.textContent = status.text;
+
+            details.appendChild(name);
+            details.appendChild(message);
+
+            item.appendChild(avatar);
+            item.appendChild(details);
+
+            item.addEventListener("click", () => {
+                window.location.href = "status.html";
+            });
+
+            statusList.appendChild(item);
+
+        });
+
+    } catch (error) {
+
+        console.error("Status loading error:", error);
+
+        statusList.innerHTML = `
+            <div class="empty">
+                Unable to load status updates.
+            </div>
+        `;
+
+    }
+}
+/* NAVIGATION TABS */
+
+function showTab(tab) {
+
+    document.querySelectorAll("[data-tab]").forEach(button => {
+        button.classList.toggle(
+            "active",
+            button.dataset.tab === tab
+        );
+    });
+
+    searchArea.style.display =
+        tab === "chats" ? "block" : "none";
+
+    if (tab === "chats") {
+
+        content.innerHTML = `
+            <div class="archive">
+                📦 <strong>Archived</strong>
+            </div>
+            <div class="section-title">RECENT CHATS</div>
+            <div id="contactList"></div>
+        `;
+
+        displayContacts(contacts);
+
+    } else if (tab === "updates") {
+
+        content.innerHTML = `
+            <div class="section-title">STATUS</div>
+
+            <div class="chat-item" id="openMyStatus"
+                 style="cursor:pointer;">
+
+                <div class="avatar"
+                     style="background:#075e54;color:white;">
+                    +
+                </div>
+
+                <div class="chat-details">
+                    <strong>My status</strong>
+                    <div class="last-message">
+                        Add a status update
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-title">RECENT UPDATES</div>
+<div id="recentStatusList"></div>
+        `;
+
+        document.getElementById("openMyStatus")
+            .addEventListener("click", () => {
+                window.location.href = "status.html";
+            });
+loadRecentStatuses();
+    } else if (tab === "communities") {
+
+        content.innerHTML = `
+            <div class="empty">
+                <h3>Communities</h3>
+                <p>Create and connect with groups.</p>
+                <p>Community features will be connected next.</p>
+            </div>
+        `;
+
+    } else if (tab === "calls") {
+
+    content.innerHTML = `
+        <div class="calls-container">
+
+            <div class="calls-header">
+                <h3>Calls</h3>
+            </div>
+
+            <div class="call-actions">
+
+                <button type="button" id="voiceCallButton">
+                    📞 Start voice call
+                </button>
+
+                <button type="button" id="videoCallButton">
+                    📹 Start video call
+                </button>
+
+            </div>
+
+<div class="call-history">
+
+    <h4>Recent</h4>
+
+    <p>No calls yet</p>
+
+</div>
+
+<div id="callContacts" style="display:none;">
+
+    <h4>Select a contact to call</h4>
+
+    <div id="callContactList"></div>
+
+</div>
+    `;
+
+}
+
+}
+
+
+document.querySelectorAll("[data-tab]").forEach(button => {
+
+    button.addEventListener("click", () => {
+        showTab(button.dataset.tab);
+    });
+
+});
+
+document.getElementById("logoutButton")
+.addEventListener("click", async () => {
+
+    try {
+
+        await signOut(auth);
+        window.location.href = "index.html";
+
+    } catch (error) {
+
+        alert("Logout failed: " + error.message);
+
+    }
+
+});
+
+document.getElementById("menuButton")
+.addEventListener("click", () => {
+
+    alert("Digitchat menu");
+
+});
+document.getElementById("addContactButton")
+.addEventListener("click", () => {
+    showTab("chats");
+    searchUsers.focus();
+});/* VOICE CALL CONTACT SELECTION */
+
+document.getElementById("voiceCallButton")
+.addEventListener("click", () => {
+
+    const callContacts = document.getElementById("callContacts");
+    const callContactList = document.getElementById("callContactList");
+
+    callContacts.style.display = "block";
+
+    callContactList.innerHTML = "";
+
+    if (contacts.length === 0) {
+
+        callContactList.innerHTML = "<p>No contacts available.</p>";
+
+        return;
+    }
+
+    contacts.forEach(contact => {
+
+        const item = document.createElement("div");
+
+        item.className = "chat-item";
+
+        item.textContent =
+            (contact.fullName || contact.username || "User") +
+            (contact.username ? " @" + contact.username : "");
+
+        item.addEventListener("click", () => {
+
+            sessionStorage.setItem("digitchatCallContact", contact.uid);
+
+            alert("Voice call selected. Calling functionality will be connected next.");
+
+        });
+
+        callContactList.appendChild(item);
+
+    });
+
+});
+</script>
+<script type="module" src="presence.js"></script>
+</body>
+</html>
